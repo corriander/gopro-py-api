@@ -449,10 +449,14 @@ class GoPro:
         else:
             return self.sendBacpac("PW", "00")
 
-    def power_on(self, _mac_address=""):
-        """Sends power on command. Mac address might need to be defined"""
-        print("Waking up...")
-        mac_address = _mac_address
+    @staticmethod
+    def normalise_mac_address(mac_address='') -> str:
+        # Problems:
+        #  - MAC is passed around everywhere yet also stored as state
+        #  - If the MAC is '' (the default!) it stays empty.
+        #  - If the MAC is None, it's set to a placeholder value with seps left in
+        #  - The normalisation is sketchy. Start from a regex
+        #    and figure out the separator after we've validated
         if mac_address is None:
             mac_address = "AA:BB:CC:DD:EE:FF"
         else:
@@ -462,6 +466,12 @@ class GoPro:
             elif len(mac_address) == 17:
                 sep = mac_address[2]
                 mac_address = mac_address.replace(sep, "")
+        return mac_address
+
+    def power_on(self, _mac_address=""):
+        """Sends power on command. Mac address might need to be defined"""
+        print("Waking up...")
+        mac_address = self.normalise_mac_address(_mac_address)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         data = bytes("FFFFFFFFFFFF" + mac_address * 16, "utf-8")
